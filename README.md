@@ -4,8 +4,8 @@
 
 ## Table of contents
 
-### 1. [Multithreading tasks]()
-### 2. [Multithreading problems]()
+### 1. [Multithreading tasks](https://github.com/IvanHayel/TeachMeSkills_HW_Lesson_18#multithreading-tasks)
+### 2. [Multithreading problems](https://github.com/IvanHayel/TeachMeSkills_HW_Lesson_18#multithreading-problems)
 
 --- 
 
