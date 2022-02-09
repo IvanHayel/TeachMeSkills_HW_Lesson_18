@@ -6,25 +6,25 @@ import com.teachmeskills.task_3.model.station.ServiceStation;
 import java.util.Random;
 
 public class ReturnService extends Thread {
-    private final ServiceStation STATION;
-    private final Random GENERATOR;
+    private final ServiceStation station;
+    private final Random generator;
 
     public ReturnService(ServiceStation station) {
-        STATION = station;
-        GENERATOR = new Random();
+        this.station = station;
+        generator = new Random();
     }
 
     @Override
     public void run() {
-        while (STATION.isNotReadyToClose()) {
+        while (station.isNotReadyToClose()) {
             returnCar();
         }
-        STATION.closeStation();
-        STATION.showCloseInfo();
+        station.closeStation();
+        station.showCloseInfo();
     }
 
     private void returnCar() {
-        Car car = STATION.getRepairedCar();
+        Car car = station.getRepairedCar();
         System.out.printf("[Car return service]: %s is transferring to owner.%n", car);
         sleepRandomTime();
         System.out.printf("[Car return service]: %s delivered successfully.%n", car);
@@ -32,9 +32,10 @@ public class ReturnService extends Thread {
 
     private void sleepRandomTime() {
         try {
-            Thread.sleep(GENERATOR.nextLong(5000));
+            Thread.sleep(generator.nextLong(5000));
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
     }
 }

@@ -14,89 +14,89 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ServiceStation {
-    private final int MAX_CARS_QUANTITY;
-    private final ExecutorService EXECUTOR_SERVICE;
-    private final ReceiveService RECEIVE_SERVICE;
-    private final ReturnService RETURN_SERVICE;
-    private final Queue<Car> BROKEN_CARS;
-    private final Queue<Car> REPAIRED_CARS;
-    private final List<Thread> WORKERS;
-    private final Object RECEIVE_LOCK;
-    private final Object RETURN_LOCK;
+    private final int maxCarsQuantity;
+    private final ExecutorService executorService;
+    private final ReceiveService receiveService;
+    private final ReturnService returnService;
+    private final Queue<Car> brokenCars;
+    private final Queue<Car> repairedCars;
+    private final List<Thread> workers;
+    private final Object receiveLock;
+    private final Object returnLock;
 
     private int carsReceived;
     private int carsReturned;
 
     public ServiceStation(int workersQuantity, int maxCarsQuantity) {
-        EXECUTOR_SERVICE = Executors.newFixedThreadPool(workersQuantity, new WorkerThreadFactory());
-        RECEIVE_SERVICE = new ReceiveService(this);
-        RETURN_SERVICE = new ReturnService(this);
+        executorService = Executors.newFixedThreadPool(workersQuantity, new WorkerThreadFactory());
+        receiveService = new ReceiveService(this);
+        returnService = new ReturnService(this);
 
-        WORKERS = new ArrayList<>(workersQuantity);
+        workers = new ArrayList<>(workersQuantity);
         for (int counter = 0; counter < workersQuantity; counter++) {
-            WORKERS.add(new Thread(new MaintenanceService(this)));
+            workers.add(new Thread(new MaintenanceService(this)));
         }
 
-        RECEIVE_LOCK = new Object();
-        RETURN_LOCK = new Object();
+        receiveLock = new Object();
+        returnLock = new Object();
 
-        BROKEN_CARS = new ArrayBlockingQueue<>(maxCarsQuantity);
-        REPAIRED_CARS = new ArrayBlockingQueue<>(maxCarsQuantity);
-        MAX_CARS_QUANTITY = maxCarsQuantity;
+        brokenCars = new ArrayBlockingQueue<>(maxCarsQuantity);
+        repairedCars = new ArrayBlockingQueue<>(maxCarsQuantity);
+        this.maxCarsQuantity = maxCarsQuantity;
 
         carsReceived = 0;
         carsReturned = 0;
     }
 
     public void startWork() {
-        RECEIVE_SERVICE.start();
+        receiveService.start();
         startRepairingCars();
-        RETURN_SERVICE.start();
+        returnService.start();
     }
 
     private void startRepairingCars() {
-        WORKERS.forEach(EXECUTOR_SERVICE::execute);
+        workers.forEach(executorService::execute);
     }
 
     public boolean needCars() {
-        return carsReceived < MAX_CARS_QUANTITY;
+        return carsReceived < maxCarsQuantity;
     }
 
     public boolean isNotReadyToClose() {
-        return carsReturned < MAX_CARS_QUANTITY;
+        return carsReturned < maxCarsQuantity;
     }
 
     public void register(Car car) {
-        synchronized (RECEIVE_LOCK) {
-            BROKEN_CARS.offer(car);
+        synchronized (receiveLock) {
+            brokenCars.offer(car);
             carsReceived++;
-            RECEIVE_LOCK.notifyAll();
+            receiveLock.notifyAll();
         }
     }
 
     public synchronized void putRepairedCar(Car car) {
-        REPAIRED_CARS.offer(car);
-        synchronized (RETURN_LOCK) {
-            RETURN_LOCK.notifyAll();
+        repairedCars.offer(car);
+        synchronized (returnLock) {
+            returnLock.notifyAll();
         }
     }
 
     public Car getBrokenCar() {
         waitForBrokenCars();
-        return BROKEN_CARS.poll();
+        return brokenCars.poll();
     }
 
     private void waitForBrokenCars() {
-        synchronized (RECEIVE_LOCK) {
-            while (BROKEN_CARS.isEmpty() && isNotReadyToClose()) {
+        synchronized (receiveLock) {
+            while (brokenCars.isEmpty() && isNotReadyToClose()) {
                 try {
-                    RECEIVE_LOCK.wait();
+                    receiveLock.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Thread.currentThread().interrupt();
                 }
                 if (!isNotReadyToClose()) {
-                    EXECUTOR_SERVICE.shutdown();
+                    executorService.shutdown();
                 }
             }
         }
@@ -105,14 +105,14 @@ public class ServiceStation {
     public Car getRepairedCar() {
         waitForRepairedCars();
         carsReturned++;
-        return REPAIRED_CARS.poll();
+        return repairedCars.poll();
     }
 
     private void waitForRepairedCars() {
-        synchronized (RETURN_LOCK) {
-            while (REPAIRED_CARS.isEmpty()) {
+        synchronized (returnLock) {
+            while (repairedCars.isEmpty()) {
                 try {
-                    RETURN_LOCK.wait(1000);
+                    returnLock.wait(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Thread.currentThread().interrupt();
@@ -123,8 +123,8 @@ public class ServiceStation {
 
     public void closeStation() {
         System.out.println("The workers went home...");
-        synchronized (RECEIVE_LOCK) {
-            RECEIVE_LOCK.notifyAll();
+        synchronized (receiveLock) {
+            receiveLock.notifyAll();
         }
     }
 

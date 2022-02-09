@@ -6,17 +6,17 @@ import com.teachmeskills.task_3.model.station.ServiceStation;
 import java.util.Random;
 
 public class ReceiveService extends Thread {
-    private final ServiceStation STATION;
-    private final Random GENERATOR;
+    private final ServiceStation station;
+    private final Random generator;
 
     public ReceiveService(ServiceStation station) {
-        STATION = station;
-        GENERATOR = new Random();
+        this.station = station;
+        generator = new Random();
     }
 
     @Override
     public void run() {
-        while (STATION.needCars()) {
+        while (station.needCars()) {
             searchCar();
         }
     }
@@ -26,14 +26,15 @@ public class ReceiveService extends Thread {
         sleepRandomTime();
         Car car = new Car();
         System.out.printf("[Car search service]: found - %s.%n", car);
-        STATION.register(car);
+        station.register(car);
     }
 
     private void sleepRandomTime() {
         try {
-            Thread.sleep(1000 + GENERATOR.nextLong(5000));
+            Thread.sleep(1000 + generator.nextLong(5000));
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
     }
 }

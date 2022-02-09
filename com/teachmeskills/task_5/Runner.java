@@ -24,7 +24,7 @@ public class Runner {
     }
 
     public static void main(String[] args) {
-        SynchronizedBuffer buffer = new SynchronizedBuffer(BUFFER_CAPACITY);
+        SynchronizedBuffer<Integer> buffer = new SynchronizedBuffer<>(BUFFER_CAPACITY);
         new Thread(new LoaderRunnableImpl(buffer)).start();
         new Thread(new UploaderRunnableImpl(buffer)).start();
     }

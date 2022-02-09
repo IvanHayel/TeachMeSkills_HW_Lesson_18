@@ -15,6 +15,7 @@ public class MyRunnableImpl implements Runnable {
                 latch.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
         System.out.printf("%s with priority %d.%n", name, priority);
